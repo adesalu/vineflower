@@ -398,7 +398,7 @@ public class ClassesProcessor implements CodeConstants {
     return true;
   }
 
-  public void writeClass(StructClass cl, TextBuffer buffer) throws IOException {
+  /*public void writeClass(StructClass cl, TextBuffer buffer) throws IOException {
     ClassNode root = mapRootClasses.get(cl.qualifiedName);
     if (root.type != ClassNode.Type.ROOT) {
       return;
@@ -523,7 +523,119 @@ public class ClassesProcessor implements CodeConstants {
       destroyWrappers(root);
       DecompilerContext.getLogger().endReadingClass();
     }
+  }*/
+
+  public void writeClass(StructClass cl, TextBuffer buffer) throws IOException {
+    ClassNode root = mapRootClasses.get(cl.qualifiedName);
+    if (root.type != ClassNode.Type.ROOT) {
+      return;
+    }
+
+    boolean packageInfo = cl.isSynthetic() && "package-info".equals(root.simpleName);
+    boolean moduleInfo = cl.hasModifier(CodeConstants.ACC_MODULE) && cl.hasAttribute(StructGeneralAttribute.ATTRIBUTE_MODULE);
+
+    DecompilerContext.getLogger().startReadingClass(cl.qualifiedName);
+    try {
+      ImportCollector importCollector = new ImportCollector(root);
+      DecompilerContext.startClass(importCollector);
+
+      if (packageInfo) {
+        ClassWriter.packageInfoToJava(cl, buffer);
+        importCollector.writeImports(buffer, false);
+      } else if (moduleInfo) {
+        TextBuffer moduleBuffer = new TextBuffer(AVERAGE_CLASS_SIZE);
+        ClassWriter.moduleInfoToJava(cl, moduleBuffer);
+        importCollector.writeImports(buffer, true);
+        buffer.append(moduleBuffer);
+      } else {
+        try {
+          new LambdaProcessor().processClass(root);
+        } catch (Throwable t) {
+          handleDecompileError(root, t, buffer);
+          return;
+        }
+
+        addClassNameToImport(root, importCollector);
+
+        initWrappers(root);
+
+        try {
+          new NestedClassProcessor().processClass(root, root);
+          new NestedMemberAccess().propagateMemberAccess(root);
+        } catch (Throwable t) {
+          handleDecompileError(root, t, buffer);
+          return;
+        }
+
+        TextBuffer classBuffer = new TextBuffer(AVERAGE_CLASS_SIZE);
+        new ClassWriter().classToJava(root, classBuffer, 0);
+        classBuffer.reformat();
+        updateBytecodeSourceMapper(root, classBuffer);
+
+        int index = cl.qualifiedName.lastIndexOf('/');
+        if (index >= 0) {
+          String packageName = cl.qualifiedName.substring(0, index).replace('/', '.');
+          buffer.append("package ").append(packageName).append(';').appendLineSeparator().appendLineSeparator();
+        }
+
+        importCollector.writeImports(buffer, true);
+
+        int offsetLines = buffer.countLines();
+        buffer.append(classBuffer);
+
+        if (DecompilerContext.getOption(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING)) {
+          BytecodeSourceMapper mapper = DecompilerContext.getBytecodeSourceMapper();
+          mapper.addTotalOffset(offsetLines);
+          if (DecompilerContext.getOption(IFernflowerPreferences.DUMP_ORIGINAL_LINES)) {
+            buffer.dumpOriginalLineNumbers(mapper.getOriginalLinesMapping());
+          }
+          if (DecompilerContext.getOption(IFernflowerPreferences.UNIT_TEST_MODE)) {
+            buffer.appendLineSeparator();
+            mapper.dumpMapping(buffer, true);
+          }
+        }
+      }
+    } finally {
+      destroyWrappers(root);
+      DecompilerContext.getLogger().endReadingClass();
+    }
   }
+
+  private static void handleDecompileError(ClassNode root, Throwable t, TextBuffer buffer) {
+    DecompilerContext.getLogger().writeMessage("Class " + root.simpleName + " couldn't be written.",
+      IFernflowerLogger.Severity.WARN,
+      t);
+    buffer.append("// $VF: Couldn't be decompiled");
+    buffer.appendLineSeparator();
+    if (DecompilerContext.getOption(IFernflowerPreferences.DUMP_EXCEPTION_ON_ERROR)) {
+      List<String> lines = new ArrayList<>();
+      lines.addAll(ClassWriter.getErrorComment());
+      ClassWriter.collectErrorLines(t, lines);
+      for (String line : lines) {
+        buffer.append("//");
+        if (!line.isEmpty()) buffer.append(' ').append(line);
+        buffer.appendLineSeparator();
+      }
+    }
+  }
+
+  private static void updateBytecodeSourceMapper(ClassNode root, TextBuffer classBuffer) {
+    classBuffer.getTracers().forEach((classAndMethod, tracer) -> {
+      StructClass clazz = DecompilerContext.getStructContext().getClass(classAndMethod.a);
+      if (clazz != null) {
+        StructMethod method = clazz.getMethod(classAndMethod.b);
+        if (method != null) {
+          StructLineNumberTableAttribute lineNumberTable =
+            method.getAttribute(StructGeneralAttribute.ATTRIBUTE_LINE_NUMBER_TABLE);
+          tracer.setLineNumberTable(lineNumberTable);
+          DecompilerContext.getBytecodeSourceMapper().addTracer(classAndMethod.a, classAndMethod.b, tracer);
+        }
+      }
+    });
+  }
+
+
+
 
   private static void initWrappers(ClassNode node) {
     if (node.type == ClassNode.Type.LAMBDA) {

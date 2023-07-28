@@ -174,9 +174,9 @@ public class ClassWriter implements StatementWriter {
         boolean simpleLambda = false;
 
         if (!lambdaToAnonymous) {
-          boolean lambdaParametersNeedParentheses = md_lambda.params.length != 1;
+          boolean lambdaNeedParentheses = md_lambda.params.length != 1;
 
-          if (lambdaParametersNeedParentheses) {
+          if (lambdaNeedParentheses) {
             buffer.append('(');
           }
 
@@ -199,7 +199,7 @@ public class ClassWriter implements StatementWriter {
             index += md_content.params[i].stackSize;
           }
 
-          if (lambdaParametersNeedParentheses) {
+          if (lambdaNeedParentheses) {
             buffer.append(")");
           }
           buffer.append(" ->");
@@ -1199,6 +1199,8 @@ public class ClassWriter implements StatementWriter {
     return !hideMethod;
   }
 
+
+
   private static void dumpError(TextBuffer buffer, MethodWrapper wrapper, int indent) {
     List<String> lines = new ArrayList<>();
     lines.add("$VF: Couldn't be decompiled");
@@ -1231,7 +1233,26 @@ public class ClassWriter implements StatementWriter {
   }
 
   public static void collectErrorLines(Throwable error, List<String> lines) {
-    StackTraceElement[] stack = error.getStackTrace();
+    List<StackTraceElement> filteredStack = filterStackTrace(error.getStackTrace());
+    if (filteredStack.isEmpty()) return;
+
+    lines.add(error.toString());
+    for (StackTraceElement e : filteredStack) {
+      lines.add("  at " + e);
+    }
+
+    Throwable cause = error.getCause();
+    if (cause != null) {
+      List<String> causeLines = new ArrayList<>();
+      collectErrorLines(cause, causeLines);
+      if (!causeLines.isEmpty()) {
+        lines.add("Caused by: " + causeLines.get(0));
+        lines.addAll(causeLines.subList(1, causeLines.size()));
+      }
+    }
+  }
+
+  private static List<StackTraceElement> filterStackTrace(StackTraceElement[] stack) {
     List<StackTraceElement> filteredStack = new ArrayList<>();
     boolean hasSeenOwnClass = false;
     for (StackTraceElement e : stack) {
@@ -1250,21 +1271,9 @@ public class ClassWriter implements StatementWriter {
         }
       }
     }
-    if (filteredStack.isEmpty()) return;
-    lines.add(error.toString());
-    for (StackTraceElement e : filteredStack) {
-      lines.add("  at " + e);
-    }
-    Throwable cause = error.getCause();
-    if (cause != null) {
-      List<String> causeLines = new ArrayList<>();
-      collectErrorLines(cause, causeLines);
-      if (!causeLines.isEmpty()) {
-        lines.add("Caused by: " + causeLines.get(0));
-        lines.addAll(causeLines.subList(1, causeLines.size()));
-      }
-    }
+    return filteredStack;
   }
+
 
   private static void collectBytecode(MethodWrapper wrapper, List<String> lines) throws IOException {
     ClassNode classNode = (ClassNode)DecompilerContext.getProperty(DecompilerContext.CURRENT_CLASS_NODE);
