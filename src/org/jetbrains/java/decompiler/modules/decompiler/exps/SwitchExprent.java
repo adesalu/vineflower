@@ -14,7 +14,7 @@ import org.jetbrains.java.decompiler.util.TextBuffer;
 import java.util.*;
 
 public class SwitchExprent extends Exprent {
-  private final SwitchStatement backing;
+  final SwitchStatement backing;
   private final VarType type;
   // TODO: is needed?
   private final boolean fallthrough;

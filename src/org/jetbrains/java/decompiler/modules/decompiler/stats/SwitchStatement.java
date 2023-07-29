@@ -362,7 +362,7 @@ public final class SwitchStatement extends Statement {
 
     // case values
     BasicBlockStatement bbstat = (BasicBlockStatement)first;
-    int[] values = ((SwitchInstruction)bbstat.getBlock().getLastInstruction()).getValues();
+    int[] values = ((SwitchInstruction)bbstat.getBlock().getInstructionSeq().getLastInstruction()).getValues();
 
     List<Statement> nodes = new ArrayList<>(stats.size() - 1);
     List<List<Integer>> edges = new ArrayList<>(stats.size() - 1);
@@ -494,6 +494,7 @@ public final class SwitchStatement extends Statement {
     caseEdges = lstEdges;
     caseValues = lstValues;
   }
+
 
   public List<Exprent> getHeadexprentList() {
     return headexprent;

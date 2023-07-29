@@ -7,8 +7,6 @@ import org.jetbrains.java.decompiler.code.cfg.ControlFlowGraph;
 import org.jetbrains.java.decompiler.code.cfg.ExceptionRangeCFG;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
-import org.jetbrains.java.decompiler.struct.StructMethod;
-import org.jetbrains.java.decompiler.util.DotExporter;
 
 import java.util.*;
 
@@ -68,7 +66,7 @@ public final class DeadCodeHelper {
 
     boolean deletedRanges = false;
 
-    if (block.getSeq().isEmpty()) {
+    if (block.getInstructionSeq().isEmpty()) {
 
       if (block.getSuccs().size() > 1) {
         if (block.getPreds().size() > 1) {
@@ -89,8 +87,8 @@ public final class DeadCodeHelper {
           BasicBlock pred = block.getPreds().get(0);
 
           // FIXME: flag in the basic block
-          if (pred.getSuccs().size() != 1 || (!pred.getSeq().isEmpty()
-                                              && pred.getSeq().getLastInstr().group == CodeConstants.GROUP_SWITCH)) {
+          if (pred.getSuccs().size() != 1 || (!pred.getInstructionSeq().isEmpty()
+                                              && pred.getInstructionSeq().getLastInstr().group == CodeConstants.GROUP_SWITCH)) {
             return false;
           }
         }
@@ -236,7 +234,7 @@ public final class DeadCodeHelper {
     Set<BasicBlock> ignored = findCircularJumps(graph);
 
     for (BasicBlock block : graph.getBlocks()) {
-      Instruction instr = block.getLastInstruction();
+      Instruction instr = block.getInstructionSeq().getLastInstruction();
 
       if (instr != null && instr.opcode == CodeConstants.opc_goto) {
         // Part of an empty circular jump sequence. This needs to be condensed later, so we do not touch it
@@ -244,7 +242,7 @@ public final class DeadCodeHelper {
           continue;
         }
 
-        block.getSeq().removeLast();
+        block.getInstructionSeq().removeLast();
       }
     }
 
@@ -278,7 +276,7 @@ public final class DeadCodeHelper {
       // Jump traversal
       BasicBlock check = block;
       while (true) {
-        Instruction instr = check.getLastInstruction();
+        Instruction instr = check.getInstructionSeq().getLastInstruction();
 
         if (instr != null && instr.opcode == CodeConstants.opc_goto) {
           if (check.getSuccs().size() == 1) {
@@ -334,7 +332,7 @@ public final class DeadCodeHelper {
         }
 
         BasicBlock predBlock = setPreds.iterator().next();
-        InstructionSequence predSeq = predBlock.getSeq();
+        InstructionSequence predSeq = predBlock.getInstructionSeq();
         if(predSeq.isEmpty() || predSeq.getLastInstr().opcode != CodeConstants.opc_monitorenter) {
           continue; // not a synchronized range
         }
@@ -344,7 +342,7 @@ public final class DeadCodeHelper {
         setProtectedBlocks.add(range.getHandler());
 
         for (BasicBlock block : setProtectedBlocks) {
-          InstructionSequence blockSeq = block.getSeq();
+          InstructionSequence blockSeq = block.getInstructionSeq();
           for (int i = 0; i < blockSeq.length(); i++) {
             if (blockSeq.getInstr(i).opcode == CodeConstants.opc_monitorexit) {
               monitorexit_in_range = true;
@@ -374,7 +372,7 @@ public final class DeadCodeHelper {
         }
 
         BasicBlock succBlock = setSuccs.iterator().next();
-        InstructionSequence succSeq = succBlock.getSeq();
+        InstructionSequence succSeq = succBlock.getInstructionSeq();
 
         int succ_monitorexit_index = -1;
         for (int i = 0; i < succSeq.length(); i++) {
@@ -393,7 +391,7 @@ public final class DeadCodeHelper {
           continue; // non-unique handler successor
         }
         BasicBlock succHandler = handlerBlock.getSuccs().get(0);
-        InstructionSequence succHandlerSeq = succHandler.getSeq();
+        InstructionSequence succHandlerSeq = succHandler.getInstructionSeq();
         if(succHandlerSeq.isEmpty() || succHandlerSeq.getLastInstr().opcode != CodeConstants.opc_athrow) {
           continue; // not a standard synchronized range
         }
@@ -447,7 +445,7 @@ public final class DeadCodeHelper {
         }
 
         // copy instructions (handler successor block)
-        InstructionSequence handlerSeq = handlerBlock.getSeq();
+        InstructionSequence handlerSeq = handlerBlock.getInstructionSeq();
         for(int counter = 0; counter < handler_monitorexit_index; counter++) {
           handlerSeq.addInstruction(succHandlerSeq.getInstr(0), -1);
           succHandlerSeq.removeInstruction(0);
@@ -495,7 +493,7 @@ public final class DeadCodeHelper {
       }
 
       BasicBlock pred = predecessors.iterator().next();
-      if (pred.getSeq().isEmpty() || pred.getSeq().getLastInstr().opcode != CodeConstants.opc_monitorenter) {
+      if (pred.getInstructionSeq().isEmpty() || pred.getInstructionSeq().getLastInstr().opcode != CodeConstants.opc_monitorenter) {
         continue; // not a synchronized range
       }
 
@@ -509,7 +507,7 @@ public final class DeadCodeHelper {
       }
 
       for (BasicBlock successor : successors) {
-        if (!successor.getSeq().isEmpty() && successor.getSeq().getLastInstr().opcode == CodeConstants.opc_monitorexit) {
+        if (!successor.getInstructionSeq().isEmpty() && successor.getInstructionSeq().getLastInstr().opcode == CodeConstants.opc_monitorexit) {
           // If the range doesn't have the monitorexit instruction, add it to the range
           if (!range.getProtectedRange().contains(successor)) {
             range.getProtectedRange().add(successor);
@@ -527,7 +525,7 @@ public final class DeadCodeHelper {
   public static void incorporateValueReturns(ControlFlowGraph graph) {
 
     for (BasicBlock block : graph.getBlocks()) {
-      InstructionSequence seq = block.getSeq();
+      InstructionSequence seq = block.getInstructionSeq();
 
       int len = seq.length();
       if (len > 0 && len < 3) {
@@ -654,7 +652,7 @@ public final class DeadCodeHelper {
 
       for (BasicBlock block : graph.getBlocks()) {
 
-        InstructionSequence seq = block.getSeq();
+        InstructionSequence seq = block.getInstructionSeq();
 
         if (block.getSuccs().size() == 1) {
           BasicBlock next = block.getSuccs().get(0);
@@ -674,9 +672,9 @@ public final class DeadCodeHelper {
               }
 
               if (sameRanges) {
-                seq.addSequence(next.getSeq());
+                seq.addSequence(next.getInstructionSeq());
                 block.getInstrOldOffsets().addAll(next.getInstrOldOffsets());
-                next.getSeq().clear();
+                next.getInstructionSeq().clear();
 
                 removeEmptyBlock(graph, next, true);
 

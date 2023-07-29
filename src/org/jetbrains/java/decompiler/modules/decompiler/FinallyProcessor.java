@@ -31,7 +31,6 @@ import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.StructMethod;
 import org.jetbrains.java.decompiler.struct.gen.MethodDescriptor;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
-import org.jetbrains.java.decompiler.util.DotExporter;
 import org.jetbrains.java.decompiler.util.InterpreterUtil;
 import org.jetbrains.java.decompiler.util.ListStack;
 
@@ -300,7 +299,7 @@ public class FinallyProcessor {
 
       boolean isEmpty = false;
       boolean isFirstLast = mapLast.containsKey(firstBasicBlock);
-      InstructionSequence seq = firstBasicBlock.getSeq();
+      InstructionSequence seq = firstBasicBlock.getInstructionSeq();
 
       switch (firstcode) {
         case 0:
@@ -495,7 +494,7 @@ public class FinallyProcessor {
       return true;
     }
     else {
-      if (first.getSeq().length() == 1 && finallytype > 0) {
+      if (first.getInstructionSeq().length() == 1 && finallytype > 0) {
         BasicBlock firstsuc = first.getSuccs().get(0);
         if (catchBlocks.contains(firstsuc)) {
           first = firstsuc;
@@ -627,7 +626,7 @@ public class FinallyProcessor {
       }
 
       // exception successors
-      if (isLastBlock && blockSample.getSeq().isEmpty()) {
+      if (isLastBlock && blockSample.getInstructionSeq().isEmpty()) {
         // do nothing, blockSample will be removed anyway
       }
       else {
@@ -647,9 +646,9 @@ public class FinallyProcessor {
 
                 List<int[]> lst = entry.lstStoreVars;
 
-                if (sucCatch.getSeq().length() > 0 && sucSample.getSeq().length() > 0) {
-                  Instruction instrCatch = sucCatch.getSeq().getInstr(0);
-                  Instruction instrSample = sucSample.getSeq().getInstr(0);
+                if (sucCatch.getInstructionSeq().length() > 0 && sucSample.getInstructionSeq().length() > 0) {
+                  Instruction instrCatch = sucCatch.getInstructionSeq().getInstr(0);
+                  Instruction instrSample = sucSample.getInstructionSeq().getInstr(0);
 
                   if (instrCatch.opcode == CodeConstants.opc_astore &&
                       instrSample.opcode == CodeConstants.opc_astore) {
@@ -723,8 +722,8 @@ public class FinallyProcessor {
 
         if (block != next) {
           if (InterpreterUtil.equalSets(next.getSuccs(), block.getSuccs())) {
-            InstructionSequence seqNext = next.getSeq();
-            InstructionSequence seqBlock = block.getSeq();
+            InstructionSequence seqNext = next.getInstructionSeq();
+            InstructionSequence seqBlock = block.getInstructionSeq();
 
             if (seqNext.length() == seqBlock.length()) {
               for (int i = 0; i < seqNext.length(); i++) {
@@ -778,8 +777,8 @@ public class FinallyProcessor {
                                        int type,
                                        int finallytype,
                                        List<int[]> lstStoreVars) {
-    InstructionSequence seqPattern = pattern.getSeq();
-    InstructionSequence seqSample = sample.getSeq();
+    InstructionSequence seqPattern = pattern.getInstructionSeq();
+    InstructionSequence seqSample = sample.getInstructionSeq();
 
     if (type != 0) {
       seqPattern = seqPattern.clone();
@@ -971,7 +970,7 @@ public class FinallyProcessor {
         }
 
         // shift extern edges on splitted blocks
-        if (block.getSeq().isEmpty() && block.getSuccs().size() == 1) {
+        if (block.getInstructionSeq().isEmpty() && block.getSuccs().size() == 1) {
           BasicBlock succs = block.getSuccs().get(0);
           for (BasicBlock pred : new ArrayList<>(block.getPreds())) {
             if (!setBlocks.contains(pred)) {
@@ -1009,7 +1008,7 @@ public class FinallyProcessor {
   }
 
   private static void removeExceptionInstructionsEx(BasicBlock block, int blocktype, int finallytype) {
-    InstructionSequence seq = block.getSeq();
+    InstructionSequence seq = block.getInstructionSeq();
 
     if (finallytype == 3) { // empty finally handler
       for (int i = seq.length() - 1; i >= 0; i--) {
@@ -1082,7 +1081,7 @@ public class FinallyProcessor {
     for (BasicBlock exit : exits) {
       // We only want exits with 1 successor block
       if (exit.getSuccs().size() == 1) {
-        Instruction instr = exit.getLastInstruction();
+        Instruction instr = exit.getInstructionSeq().getLastInstruction();
 
         int index = indexOf(instr);
 
@@ -1102,7 +1101,7 @@ public class FinallyProcessor {
             }
 
             // Go through all instructions of predecessor
-            for (Instruction predInstr : pred.getSeq()) {
+            for (Instruction predInstr : pred.getInstructionSeq()) {
               if (predInstr.opcode == STORE_CODES[index]) {
                 // Found an earlier store to the same variable, we cannot inline this
                 if (predInstr.operand(0) == instr.operand(0)) {
@@ -1119,16 +1118,16 @@ public class FinallyProcessor {
             }
           }
 
-          InstructionSequence nextSeq = exit.getSuccs().get(0).getSeq();
+          InstructionSequence nextSeq = exit.getSuccs().get(0).getInstructionSeq();
           if (nextSeq.length() == 2) {
             // Check if next block's sequence is load and return
             if (nextSeq.getInstr(0).opcode == NEXT_CODES[index][0] && nextSeq.getInstr(1).opcode == NEXT_CODES[index][1]) {
               // Make sure variable index is correct
               if (instr.operand(0) == nextSeq.getInstr(0).operand(0)) {
                 // remove store
-                exit.getSeq().removeLast();
+                exit.getInstructionSeq().removeLast();
                 // add return
-                exit.getSeq().addInstruction(nextSeq.getInstr(1), -1);
+                exit.getInstructionSeq().addInstruction(nextSeq.getInstr(1), -1);
 
                 // Clear next exception range, mergeBasicBlocks will take care of it
                 nextSeq.clear();

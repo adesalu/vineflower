@@ -57,6 +57,7 @@ public abstract class InstructionSequence implements Iterable<Instruction> {
     }
   }
 
+
   public void removeInstruction(int index) {
     collinstr.remove(index);
   }
@@ -78,6 +79,15 @@ public abstract class InstructionSequence implements Iterable<Instruction> {
 
   public Instruction getLastInstr() {
   return collinstr.getLast();
+  }
+
+  public Instruction getLastInstruction() {
+    if (collinstr.isEmpty()) {
+      return null;
+    }
+    else {
+      return getLastInstr();
+    }
   }
 
   public int getOffset(int index) {
@@ -136,6 +146,8 @@ public abstract class InstructionSequence implements Iterable<Instruction> {
     return buf.toString();
   }
 
+
+
   // *****************************************************************************
   // getter and setter methods
   // *****************************************************************************
@@ -156,4 +168,6 @@ public abstract class InstructionSequence implements Iterable<Instruction> {
   public Iterator<Instruction> iterator() {
     return this.collinstr.iterator();
   }
+
+
 }

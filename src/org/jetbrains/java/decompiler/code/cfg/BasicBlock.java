@@ -43,14 +43,7 @@ public class BasicBlock implements IGraphNode {
     return seq.getInstr(index);
   }
 
-  public Instruction getLastInstruction() {
-    if (seq.isEmpty()) {
-      return null;
-    }
-    else {
-      return seq.getLastInstr();
-    }
-  }
+  public InstructionSequence getInstructionSeq(){return seq;}
 
   public Integer getOldOffset(int index) {
     if(index < instrOldOffsets.size()) {
@@ -58,10 +51,6 @@ public class BasicBlock implements IGraphNode {
     } else {
       return -1;
     }
-  }
-
-  public int size() {
-    return seq.length();
   }
 
   public void addPredecessor(BasicBlock block) {
@@ -125,10 +114,6 @@ public class BasicBlock implements IGraphNode {
     block.removePredecessorException(this);
   }
 
-  public String toString() {
-    return toString(0);
-  }
-
   public String toString(int indent) {
 
     String new_line_separator = DecompilerContext.getNewLineSeparator();
@@ -184,10 +169,6 @@ public class BasicBlock implements IGraphNode {
     return preds;
   }
 
-  public InstructionSequence getSeq() {
-    return seq;
-  }
-
   public void setSeq(InstructionSequence seq) {
     this.seq = seq;
   }
@@ -205,17 +186,17 @@ public class BasicBlock implements IGraphNode {
   }
 
   public int getStartInstruction() {
-      if (seq.isEmpty()) {
-          return 0;
-      }
-      return instrOldOffsets.get(0);
+    if (seq.isEmpty()) {
+      return 0;
+    }
+    return instrOldOffsets.get(0);
   }
 
   public int getEndInstruction() {
-      if (seq.isEmpty()) {
-          return 0;
-      }
-      int end = seq.getLastInstr().length;
-      return end + instrOldOffsets.get(size() -1);
+    if (seq.isEmpty()) {
+      return 0;
+    }
+    int end = seq.getLastInstr().length;
+    return end + instrOldOffsets.get(getInstructionSeq().length() -1);
   }
 }

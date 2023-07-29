@@ -419,7 +419,7 @@ public class DotExporter {
 
     List<BasicBlock> blocks = graph.getBlocks();
     for (BasicBlock block : blocks) {
-      buffer.append(block.getId() + " [shape=box,label=\"Block " + block.getId() + "\n" + block.getSeq() + "\"];\r\n");
+      buffer.append(block.getId() + " [shape=box,label=\"Block " + block.getId() + "\n" + block.getInstructionSeq() + "\"];\r\n");
 
       List<BasicBlock> suc = block.getSuccs();
       List<BasicBlock> preds = block.getPreds();

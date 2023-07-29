@@ -41,7 +41,7 @@ public final class BasicBlockStatement extends Statement {
       coun.setCounter(CounterContainer.STATEMENT_COUNTER, id + 1);
     }
 
-    Instruction instr = block.getLastInstruction();
+    Instruction instr = block.getInstructionSeq().getLastInstruction();
     if (instr != null) {
       if (instr.group == CodeConstants.GROUP_JUMP && instr.opcode != CodeConstants.opc_goto) {
         lastBasicType = LastBasicType.IF;
@@ -73,8 +73,8 @@ public final class BasicBlockStatement extends Statement {
       DecompilerContext.getCounterContainer().getCounterAndIncrement(CounterContainer.STATEMENT_COUNTER));
 
     SimpleInstructionSequence seq = new SimpleInstructionSequence();
-    for (int i = 0; i < block.getSeq().length(); i++) {
-      seq.addInstruction(block.getSeq().getInstr(i).clone(), -1);
+    for (int i = 0; i < block.getInstructionSeq().length(); i++) {
+      seq.addInstruction(block.getInstructionSeq().getInstr(i).clone(), -1);
     }
 
     newblock.setSeq(seq);
@@ -143,7 +143,7 @@ public final class BasicBlockStatement extends Statement {
 
   @Override
   public StartEndPair getStartEndRange() {
-    if (block.size() > 0) {
+    if (block.getInstructionSeq().length() > 0) {
       return new StartEndPair(block.getStartInstruction(), block.getEndInstruction());
     } else {
       return new StartEndPair(0, 0);

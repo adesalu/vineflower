@@ -277,7 +277,7 @@ public class ExprProcessor implements CodeConstants {
     ListStack<Exprent> stack = data.getStack();
     List<Exprent> exprlist = data.getLstExprents();
 
-    InstructionSequence seq = block.getSeq();
+    InstructionSequence seq = block.getInstructionSeq();
 
     for (int i = 0; i < seq.length(); i++) {
 
@@ -895,7 +895,7 @@ public class ExprProcessor implements CodeConstants {
       BasicBlock block = ((BasicBlockStatement)stat).getBlock();
       List<Integer> offsets = block.getInstrOldOffsets();
       if (!offsets.isEmpty() &&
-          offsets.size() > block.getSeq().length()) { // some instructions have been deleted, but we still have offsets
+          offsets.size() > block.getInstructionSeq().length()) { // some instructions have been deleted, but we still have offsets
         buffer.addBytecodeMapping(offsets.get(offsets.size() - 1)); // add the last offset
       }
     }

@@ -58,7 +58,7 @@ public final class ExceptionDeobfuscator {
       if (range.uniqueStr != null) {
 
         BasicBlock handler = range.handler;
-        InstructionSequence seq = handler.getSeq();
+        InstructionSequence seq = handler.getInstructionSeq();
 
         Instruction firstinstr;
         if (seq.length() > 0) {
@@ -131,7 +131,7 @@ public final class ExceptionDeobfuscator {
                     range_super.rangeCFG.getProtectedRange().add(newblock);
 
                     handler = range.rangeCFG.getHandler();
-                    seq = handler.getSeq();
+                    seq = handler.getInstructionSeq();
                   }
                 }
               }
@@ -191,7 +191,7 @@ public final class ExceptionDeobfuscator {
 
       boolean isEmpty = true;
       for (BasicBlock block : range.getProtectedRange()) {
-        if (!block.getSeq().isEmpty()) {
+        if (!block.getInstructionSeq().isEmpty()) {
           isEmpty = false;
           break;
         }

@@ -5,7 +5,6 @@ import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.code.cfg.BasicBlock;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.collectors.CounterContainer;
-import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 import org.jetbrains.java.decompiler.modules.decompiler.DecHelper;
 import org.jetbrains.java.decompiler.modules.decompiler.ExprProcessor;
 import org.jetbrains.java.decompiler.modules.decompiler.StatEdge;
@@ -169,7 +168,7 @@ public final class CatchStatement extends Statement {
       Statement stat = stats.get(i);
       // map first instruction storing the exception to the catch statement
       BasicBlock block = stat.getBasichead().getBlock();
-      if (!block.getSeq().isEmpty() && block.getInstruction(0).opcode == CodeConstants.opc_astore) {
+      if (!block.getInstructionSeq().isEmpty() && block.getInstruction(0).opcode == CodeConstants.opc_astore) {
         Integer offset = block.getOldOffset(0);
         if (offset > -1) buf.addBytecodeMapping(offset);
       }

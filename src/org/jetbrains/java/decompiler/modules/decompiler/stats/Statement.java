@@ -386,7 +386,7 @@ public abstract class Statement implements IMatchable {
     switch (type) {
       case BASIC_BLOCK:
         BasicBlockStatement bblock = (BasicBlockStatement)this;
-        InstructionSequence seq = bblock.getBlock().getSeq();
+        InstructionSequence seq = bblock.getBlock().getInstructionSeq();
 
         if (seq != null && seq.length() > 0) {
           for (int i = 0; i < seq.length(); i++) {
@@ -421,7 +421,7 @@ public abstract class Statement implements IMatchable {
 
     if (this instanceof BasicBlockStatement) {
       BasicBlockStatement bblock = (BasicBlockStatement)this;
-      InstructionSequence seq = bblock.getBlock().getSeq();
+      InstructionSequence seq = bblock.getBlock().getInstructionSeq();
 
       if (seq != null && !seq.isEmpty()) {
         for (int i = 0; i < seq.length(); i++) {

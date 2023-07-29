@@ -292,7 +292,7 @@ public class ControlFlowGraph implements CodeConstants {
       if (startblock[i] == 1) {
         currentBlock = new BasicBlock(++counter);
 
-        currseq = currentBlock.getSeq();
+        currseq = currentBlock.getInstructionSeq();
         lstOffs = currentBlock.getInstrOldOffsets();
 
         // index: $i, key: $i+1, value BasicBlock(id = $i + 1)
@@ -327,7 +327,7 @@ public class ControlFlowGraph implements CodeConstants {
     for (int i = 0; i < this.blocks.size(); i++) {
 
       BasicBlock block = this.blocks.get(i);
-      Instruction instr = block.getLastInstruction();
+      Instruction instr = block.getInstructionSeq().getLastInstruction();
 
       switch (instr.group) {
         case GROUP_JUMP: {
@@ -427,7 +427,7 @@ public class ControlFlowGraph implements CodeConstants {
 
     for (BasicBlock block : blocks) {
 
-      if (block.getSeq().getLastInstr().opcode == CodeConstants.opc_jsr) {
+      if (block.getInstructionSeq().getLastInstr().opcode == CodeConstants.opc_jsr) {
 
         LinkedList<BasicBlock> stack = new LinkedList<>();
         LinkedList<LinkedList<BasicBlock>> stackJsrStacks = new LinkedList<>();
@@ -444,7 +444,7 @@ public class ControlFlowGraph implements CodeConstants {
 
           setVisited.add(node);
 
-          switch (node.getSeq().getLastInstr().opcode) {
+          switch (node.getInstructionSeq().getLastInstr().opcode) {
             case CodeConstants.opc_jsr:
               jsrstack.add(node);
               break;
@@ -563,7 +563,7 @@ public class ControlFlowGraph implements CodeConstants {
       for (int j = 0; j < 2; j++) {
         List<BasicBlock> lst;
         if (j == 0) {
-          if (node.getLastInstruction().opcode == CodeConstants.opc_ret) {
+          if (node.getInstructionSeq().getLastInstruction().opcode == CodeConstants.opc_ret) {
             if (node.getSuccs().contains(ret)) {
               continue;
             }
@@ -626,7 +626,7 @@ public class ControlFlowGraph implements CodeConstants {
       for (int j = 0; j < 2; j++) {
         List<BasicBlock> lst;
         if (j == 0) {
-          if (node.getLastInstruction().opcode == CodeConstants.opc_ret) {
+          if (node.getInstructionSeq().getLastInstruction().opcode == CodeConstants.opc_ret) {
             if (node.getSuccs().contains(ret)) {
               continue;
             }
@@ -653,7 +653,7 @@ public class ControlFlowGraph implements CodeConstants {
             // make a copy of the current block
             BasicBlock copy = child.cloneBlock(++last_id);
             // copy all successors
-            if (copy.getLastInstruction().opcode == CodeConstants.opc_ret &&
+            if (copy.getInstructionSeq().getLastInstruction().opcode == CodeConstants.opc_ret &&
                 child.getSuccs().contains(ret)) {
               copy.addSuccessor(ret);
               child.removeSuccessor(ret);
@@ -728,7 +728,7 @@ public class ControlFlowGraph implements CodeConstants {
 
     ListStack<VarType> stack = data.getStack();
 
-    InstructionSequence seq = block.getSeq();
+    InstructionSequence seq = block.getInstructionSeq();
     for (int i = 0; i < seq.length(); i++) {
       Instruction instr = seq.getInstr(i);
 

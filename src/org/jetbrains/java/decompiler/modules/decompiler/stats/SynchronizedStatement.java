@@ -86,8 +86,8 @@ public final class SynchronizedStatement extends Statement {
 
   private void mapMonitorExitInstr(TextBuffer buffer) {
     BasicBlock block = body.getBasichead().getBlock();
-    if (!block.getSeq().isEmpty() && block.getLastInstruction().opcode == CodeConstants.opc_monitorexit) {
-      Integer offset = block.getOldOffset(block.size() - 1);
+    if (!block.getInstructionSeq().isEmpty() && block.getInstructionSeq().getLastInstruction().opcode == CodeConstants.opc_monitorexit) {
+      Integer offset = block.getOldOffset(block.getInstructionSeq().length() - 1);
       if (offset > -1) buffer.addBytecodeMapping(offset);
     }
   }
@@ -160,4 +160,6 @@ public final class SynchronizedStatement extends Statement {
   public Exprent getHeadexprent() {
     return headexprent.get(0);
   }
+
+
 }
